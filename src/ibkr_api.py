@@ -222,8 +222,12 @@ class IBKRData:
                         opt = Option(TICKER, exp, strike, right, "SMART")
                         try:
                             await self.ib.qualifyContractsAsync(opt)
-                            tickers = await self.ib.reqTickersAsync(opt)
-                            raw_oi = tickers[0].openInterest
+                            # snapshot 模式不推 OI (generic tick 101)，改用订阅模式等待
+                            self.ib.reqMktData(opt, genericTickList="101", snapshot=False)
+                            await asyncio.sleep(2)
+                            ticker = self.ib.ticker(opt)
+                            self.ib.cancelMktData(opt)
+                            raw_oi = ticker.openInterest if ticker else None
                             oi = _safe_int(raw_oi)
                             log.debug("OI diag %s %s %s: raw=%r, int=%d",
                                       exp, strike, right, raw_oi, oi)
