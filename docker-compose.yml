@@ -1,0 +1,43 @@
+services:
+
+  # ── IB Gateway ─────────────────────────────────────────────────────────────
+  ib-gateway:
+    image: ghcr.io/gnzsnz/ib-gateway:latest
+    restart: always
+    environment:
+      TWS_USERID:                       ${TWS_USERID}
+      TWS_PASSWORD:                     ${TWS_PASSWORD}
+      TRADING_MODE:                     ${TRADING_MODE:-paper}
+      VNC_SERVER_PASSWORD:              ${VNC_SERVER_PASSWORD:-}
+      READ_ONLY_API:                    ${READ_ONLY_API:-}
+      TWOFA_TIMEOUT_ACTION:             ${TWOFA_TIMEOUT_ACTION:-exit}
+      AUTO_RESTART_TIME:                ${AUTO_RESTART_TIME:-}
+      RELOGIN_AFTER_TWOFA_TIMEOUT:      ${RELOGIN_AFTER_TWOFA_TIMEOUT:-no}
+      TWOFA_EXIT_INTERVAL:              ${TWOFA_EXIT_INTERVAL:-60}
+      TIME_ZONE:                        ${TIME_ZONE:-Etc/UTC}
+    ports:
+      - "127.0.0.1:4001:4001"   # live
+      - "127.0.0.1:4002:4002"   # paper
+      - "127.0.0.1:5900:5900"   # VNC（调试用，确认登录状态）
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4002"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  # ── CAR Monitor ────────────────────────────────────────────────────────────
+  car-monitor:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      ib-gateway:
+        condition: service_healthy
+    environment:
+      IBKR_HOST: ib-gateway
+      IBKR_PORT: 4002        # paper=4002, live=4001
+      NTFY_URL: ${NTFY_URL}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+    volumes:
+      - ./logs:/app/logs
