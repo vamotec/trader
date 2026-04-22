@@ -191,7 +191,11 @@ class IBKRData:
             chain      = chains[0]
             expirations = sorted(chain.expirations)[:2]   # 最近两个到期日
             snap        = self._last_snap
-            atm_price   = snap.price if snap else 0
+            if not snap or snap.price <= 0:
+                # 现货价未就绪，跳过这轮；下次循环 market loop 应该已经填好 _last_snap
+                log.info("Options OI skipped: snapshot not ready")
+                return {"total_oi": 0, "put_call_ratio": 0}
+            atm_price = snap.price
 
             # 取ATM附近5个行权价
             strikes = sorted(
