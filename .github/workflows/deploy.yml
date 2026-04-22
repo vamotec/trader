@@ -1,0 +1,81 @@
+name: Deploy trader
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "pyproject.toml"
+      - "uv.lock"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/trader:latest
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: GHCR_TOKEN,TWS_USERID,TWS_PASSWORD,TRADING_MODE,VNC_SERVER_PASSWORD,READ_ONLY_API,TWOFA_TIMEOUT_ACTION,AUTO_RESTART_TIME,RELOGIN_AFTER_TWOFA_TIMEOUT,TIME_ZONE,IBKR_HOST,IBKR_PORT,NTFY_URL,DEEPSEEK_API_KEY,ANTHROPIC_API_KEY
+          script: |
+            set -e
+            cd /opt/trader
+            printf 'TWS_USERID=%s\n'                    "$TWS_USERID"                    >  .env
+            printf 'TWS_PASSWORD=%s\n'                  "$TWS_PASSWORD"                  >> .env
+            printf 'TRADING_MODE=%s\n'                  "$TRADING_MODE"                  >> .env
+            printf 'VNC_SERVER_PASSWORD=%s\n'           "$VNC_SERVER_PASSWORD"           >> .env
+            printf 'READ_ONLY_API=%s\n'                 "$READ_ONLY_API"                 >> .env
+            printf 'TWOFA_TIMEOUT_ACTION=%s\n'          "$TWOFA_TIMEOUT_ACTION"          >> .env
+            printf 'AUTO_RESTART_TIME=%s\n'             "$AUTO_RESTART_TIME"             >> .env
+            printf 'RELOGIN_AFTER_TWOFA_TIMEOUT=%s\n'   "$RELOGIN_AFTER_TWOFA_TIMEOUT"   >> .env
+            printf 'TIME_ZONE=%s\n'                     "$TIME_ZONE"                     >> .env
+            printf 'IBKR_HOST=%s\n'                     "$IBKR_HOST"                     >> .env
+            printf 'IBKR_PORT=%s\n'                     "$IBKR_PORT"                     >> .env
+            printf 'NTFY_URL=%s\n'                      "$NTFY_URL"                      >> .env
+            printf 'DEEPSEEK_API_KEY=%s\n'              "$DEEPSEEK_API_KEY"              >> .env
+            printf 'ANTHROPIC_API_KEY=%s\n'             "$ANTHROPIC_API_KEY"             >> .env
+            chmod 600 .env
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u vamotec --password-stdin
+            docker compose pull
+            docker compose up -d
+            docker image prune -f
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          TWS_USERID: ${{ secrets.TWS_USERID }}
+          TWS_PASSWORD: ${{ secrets.TWS_PASSWORD }}
+          TRADING_MODE: ${{ secrets.TRADING_MODE }}
+          VNC_SERVER_PASSWORD: ${{ secrets.VNC_SERVER_PASSWORD }}
+          READ_ONLY_API: ${{ secrets.READ_ONLY_API }}
+          TWOFA_TIMEOUT_ACTION: ${{ secrets.TWOFA_TIMEOUT_ACTION }}
+          AUTO_RESTART_TIME: ${{ secrets.AUTO_RESTART_TIME }}
+          RELOGIN_AFTER_TWOFA_TIMEOUT: ${{ secrets.RELOGIN_AFTER_TWOFA_TIMEOUT }}
+          TIME_ZONE: ${{ secrets.TIME_ZONE }}
+          IBKR_HOST: ${{ secrets.IBKR_HOST }}
+          IBKR_PORT: ${{ secrets.IBKR_PORT }}
+          NTFY_URL: ${{ secrets.NTFY_URL }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

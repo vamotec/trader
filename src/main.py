@@ -40,7 +40,6 @@ ET  = ZoneInfo("America/New_York")
 # ATM 发行状态（检测到后保持，直到人工 reset）
 _atm_active = False
 
-
 # ── 终端状态显示 ──────────────────────────────────────────────────────────────
 
 def _print_status(state: SignalState, price: float):

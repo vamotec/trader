@@ -1,5 +1,5 @@
 [project]
-name = "ibkr"
+name = "trader"
 version = "0.1.0"
 description = "CAR short squeeze monitor"
 readme = "README.md"
