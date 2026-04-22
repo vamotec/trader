@@ -15,11 +15,9 @@ services:
       RELOGIN_AFTER_TWOFA_TIMEOUT:      ${RELOGIN_AFTER_TWOFA_TIMEOUT:-no}
       TWOFA_EXIT_INTERVAL:              ${TWOFA_EXIT_INTERVAL:-60}
       TIME_ZONE:                        ${TIME_ZONE:-Etc/UTC}
-      BIND_ADDRESS:                     0.0.0.0
-      TRUSTED_IPS:                      0.0.0.0/0
     ports:
-      - "127.0.0.1:4001:4001"   # live
-      - "127.0.0.1:4002:4002"   # paper
+      - "127.0.0.1:4001:4003"   # live (socat)
+      - "127.0.0.1:4002:4004"   # paper (socat)
       - "127.0.0.1:5900:5900"   # VNC（调试用，确认登录状态）
 
   # ── Trader ─────────────────────────────────────────────────────────────────
@@ -30,7 +28,8 @@ services:
       - ib-gateway
     environment:
       IBKR_HOST: ib-gateway
-      IBKR_PORT: 4002        # paper=4002, live=4001
+      # gnzsnz 的 socat 代理端口：paper=4004, live=4003（直连 4002/4001 会被 TrustedIPs 拒绝）
+      IBKR_PORT: 4004
       NTFY_URL: ${NTFY_URL}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}

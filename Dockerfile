@@ -2,7 +2,7 @@
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 
 WORKDIR /app
-COPY pyproject.toml .
+COPY pyproject.toml.bak .
 RUN uv sync --no-dev --no-install-project
 
 # ── 运行阶段：直接复用builder的Python，不另外拉镜像 ───────────────────────────

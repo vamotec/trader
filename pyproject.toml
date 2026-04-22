@@ -1,7 +1,7 @@
 [project]
 name = "trader"
 version = "0.1.0"
-description = "CAR short squeeze monitor"
+description = "Personal trade tool"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

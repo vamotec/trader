@@ -7,14 +7,14 @@ load_dotenv()
 
 # ── IBKR ─────────────────────────────────────────────────────────────────────
 # gnzsnz/ib-gateway-docker 默认暴露:
-#   4001 = live trading
-#   4002 = paper trading
+#   4003 = live trading
+#   4004 = paper trading
 IBKR_HOST = os.getenv("IBKR_HOST", "127.0.0.1")
-IBKR_PORT = int(os.getenv("IBKR_PORT", "4002"))   # 4002=paper, 4001=live
+IBKR_PORT = int(os.getenv("IBKR_PORT", "4004"))   # 4004=paper, 4003=live
 IBKR_CLIENT_ID = int(os.getenv("IBKR_CLIENT_ID", "1"))
 
 # ── ntfy ─────────────────────────────────────────────────────────────────────
-# 格式：https://ntfy.trazar.ai/car_alert_你的随机字符串
+# 格式：https://ntfy.trazar.ai/trader_alert_你的随机字符串
 NTFY_URL = os.getenv("NTFY_URL", "")
 
 # ── Anthropic ─────────────────────────────────────────────────────────────────

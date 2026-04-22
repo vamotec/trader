@@ -145,7 +145,7 @@ async def loop_options_oi():
 # ── 启动 ──────────────────────────────────────────────────────────────────────
 
 async def main():
-    log.info("CAR Monitor starting...")
+    log.info("Trader starting...")
     notifier.init()
 
     # 连接 IBKR
@@ -153,7 +153,7 @@ async def main():
 
     # 启动通知
     await notifier.send(
-        "INFO", "CAR Monitor 已启动",
+        "INFO", "Trader 已启动",
         f"股票: {TICKER}\n"
         f"信号阈值:\n"
         f"  • 换手率 < {THRESHOLDS.turnover_max*100:.0f}% 连续{THRESHOLDS.turnover_decline_days}天\n"
