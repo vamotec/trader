@@ -86,8 +86,10 @@ class IBKRData:
                     clientId = IBKR_CLIENT_ID,
                 )
                 log.info("IBKR connected (attempt %d)", attempt)
-                # paper 账户无实时行情订阅，切到延迟 15 分钟模式（3=delayed, 4=delayed-frozen）
-                self.ib.reqMarketDataType(3)
+                # paper(4004): 无实时订阅，用延迟 15 分钟(3)；live(4003): 实时快照(1)
+                is_paper = (IBKR_PORT == 4004)
+                self.ib.reqMarketDataType(3 if is_paper else 1)
+                log.info("Market data type: %s", "delayed-15min" if is_paper else "live-snapshot")
                 # 补全合约细节
                 await self.ib.qualifyContractsAsync(self._contract)
                 return
