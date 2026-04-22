@@ -12,12 +12,13 @@ IBKR 数据模块
 ib_insync 在同一 asyncio event loop 中运行，与主程序共享 loop。
 """
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Optional
 
-from ib_insync import IB, Contract, Stock, Option, util
+from ib_insync import IB, Contract, Stock, Option
 
 from config import (
     IBKR_HOST, IBKR_PORT, IBKR_CLIENT_ID,
@@ -71,7 +72,7 @@ class IBKRData:
                 return
             except Exception as e:
                 log.warning("IBKR connect attempt %d failed: %s", attempt, e)
-                await util.sleep(5 * attempt)
+                await asyncio.sleep(5 * attempt)
         raise ConnectionError("Cannot connect to IB Gateway after 5 attempts")
 
     def is_connected(self) -> bool:

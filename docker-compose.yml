@@ -15,24 +15,19 @@ services:
       RELOGIN_AFTER_TWOFA_TIMEOUT:      ${RELOGIN_AFTER_TWOFA_TIMEOUT:-no}
       TWOFA_EXIT_INTERVAL:              ${TWOFA_EXIT_INTERVAL:-60}
       TIME_ZONE:                        ${TIME_ZONE:-Etc/UTC}
+      BIND_ADDRESS:                     0.0.0.0
+      TRUSTED_IPS:                      0.0.0.0/0
     ports:
       - "127.0.0.1:4001:4001"   # live
       - "127.0.0.1:4002:4002"   # paper
       - "127.0.0.1:5900:5900"   # VNC（调试用，确认登录状态）
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:4002"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
 
   # ── Trader ─────────────────────────────────────────────────────────────────
   trader:
     image: ghcr.io/vamotec/trader:latest
     restart: unless-stopped
     depends_on:
-      ib-gateway:
-        condition: service_healthy
+      - ib-gateway
     environment:
       IBKR_HOST: ib-gateway
       IBKR_PORT: 4002        # paper=4002, live=4001
