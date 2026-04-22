@@ -19,6 +19,8 @@ services:
       - "127.0.0.1:4001:4003"   # live (socat)
       - "127.0.0.1:4002:4004"   # paper (socat)
       - "127.0.0.1:5900:5900"   # VNC（调试用，确认登录状态）
+    volumes:
+      - ib-settings:/home/ibgateway/Jts
 
   # ── Trader ─────────────────────────────────────────────────────────────────
   trader:
@@ -35,3 +37,6 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
     volumes:
       - ./logs:/app/logs
+
+volumes:
+  ib-settings:

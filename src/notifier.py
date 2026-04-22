@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from email.header import Header
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -46,7 +47,7 @@ class Notifier:
                     NTFY_URL,
                     content = full.encode(),
                     headers = {
-                        "Title":    title,
+                        "Title":    Header(title, "utf-8").encode(),
                         "Priority": PRIORITY_MAP[level],
                         "Tags":     TAGS_MAP[level],
                     },

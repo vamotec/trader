@@ -14,11 +14,21 @@ ib_insync 在同一 asyncio event loop 中运行，与主程序共享 loop。
 
 import asyncio
 import logging
+import math
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Optional
 
 from ib_insync import IB, Contract, Stock, Option
+
+
+def _safe_int(v, default: int = 0) -> int:
+    """把 IBKR 行情字段安全转成 int：None / NaN 一律回退到 default。"""
+    if v is None:
+        return default
+    if isinstance(v, float) and math.isnan(v):
+        return default
+    return int(v)
 
 from config import (
     IBKR_HOST, IBKR_PORT, IBKR_CLIENT_ID,
@@ -67,6 +77,8 @@ class IBKRData:
                     clientId = IBKR_CLIENT_ID,
                 )
                 log.info("IBKR connected (attempt %d)", attempt)
+                # paper 账户无实时行情订阅，切到延迟 15 分钟模式（3=delayed, 4=delayed-frozen）
+                self.ib.reqMarketDataType(3)
                 # 补全合约细节
                 await self.ib.qualifyContractsAsync(self._contract)
                 return
@@ -92,7 +104,7 @@ class IBKRData:
             t = tickers[0]
 
             price  = float(t.last or t.close or t.bid or 0)
-            volume = int(t.volume or 0)
+            volume = _safe_int(t.volume)
             high   = float(t.high or 0)
             low    = float(t.low  or 0)
 
@@ -139,7 +151,7 @@ class IBKRData:
                     high   = b.high,
                     low    = b.low,
                     close  = b.close,
-                    volume = int(b.volume),
+                    volume = _safe_int(b.volume),
                 )
                 for b in bars
             ]
@@ -196,7 +208,7 @@ class IBKRData:
                         try:
                             await self.ib.qualifyContractsAsync(opt)
                             tickers = await self.ib.reqTickersAsync(opt)
-                            oi = int(tickers[0].openInterest or 0)
+                            oi = _safe_int(tickers[0].openInterest)
                             total_oi += oi
                             if right == "P":
                                 put_oi += oi
