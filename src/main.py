@@ -21,6 +21,7 @@ from config import (
     INTERVAL_OPTIONS, INTERVAL_DAILY, THRESHOLDS, TICKER,
 )
 from ibkr_api import ibkr_data
+from market_hours import is_options_market_open
 from news import news_analyzer
 from notifier import notifier
 from sec import sec_monitor
@@ -34,6 +35,9 @@ logging.basicConfig(
         logging.FileHandler("car_monitor.log"),
     ],
 )
+# ib_insync 在 delayed 模式下会对每个合约先报 10091/10090/354，再 fallback 到延迟数据。
+# 只关心真正的 API 崩溃，所以把 wrapper 的日志压到 CRITICAL；ib.ib 保留 WARNING。
+logging.getLogger("ib_insync.wrapper").setLevel(logging.CRITICAL)
 log = logging.getLogger("main")
 ET  = ZoneInfo("America/New_York")
 
@@ -126,19 +130,22 @@ async def loop_news():
 
 
 async def loop_options_oi():
-    """5分钟：期权 OI"""
+    """5分钟：期权 OI（仅交易时段，开盘后 20 分钟起）"""
     log.info("Options OI loop started")
     await asyncio.sleep(8)
     while True:
-        try:
-            result = await ibkr_data.get_options_oi()
-            oi = result.get("total_oi", 0)
-            if oi > 0:
-                signal_analyzer.update_oi(oi)
-                log.info("Options OI updated: %.0fK (P/C=%.2f)",
-                         oi / 1000, result.get("put_call_ratio", 0))
-        except Exception as e:
-            log.error("Options OI loop error: %s", e)
+        if is_options_market_open():
+            try:
+                result = await ibkr_data.get_options_oi()
+                oi = result.get("total_oi", 0)
+                if oi > 0:
+                    signal_analyzer.update_oi(oi)
+                    log.info("Options OI updated: %.0fK (P/C=%.2f)",
+                             oi / 1000, result.get("put_call_ratio", 0))
+            except Exception as e:
+                log.error("Options OI loop error: %s", e)
+        else:
+            log.debug("Options market closed, skipping OI fetch")
         await asyncio.sleep(INTERVAL_OPTIONS)
 
 

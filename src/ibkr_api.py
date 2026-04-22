@@ -30,6 +30,15 @@ def _safe_int(v, default: int = 0) -> int:
         return default
     return int(v)
 
+
+def _safe_float(v, default: float = 0.0) -> float:
+    """把 IBKR 行情字段安全转成 float：None / NaN 一律回退到 default。"""
+    if v is None:
+        return default
+    if isinstance(v, float) and math.isnan(v):
+        return default
+    return float(v)
+
 from config import (
     IBKR_HOST, IBKR_PORT, IBKR_CLIENT_ID,
     TICKER, EXCHANGE, SHARES_FLOAT,
@@ -103,10 +112,10 @@ class IBKRData:
             tickers = await self.ib.reqTickersAsync(self._contract)
             t = tickers[0]
 
-            price  = float(t.last or t.close or t.bid or 0)
+            price  = _safe_float(t.last) or _safe_float(t.close) or _safe_float(t.bid)
             volume = _safe_int(t.volume)
-            high   = float(t.high or 0)
-            low    = float(t.low  or 0)
+            high   = _safe_float(t.high)
+            low    = _safe_float(t.low)
 
             snap = Snapshot(
                 price     = price,
@@ -212,7 +221,10 @@ class IBKRData:
                         try:
                             await self.ib.qualifyContractsAsync(opt)
                             tickers = await self.ib.reqTickersAsync(opt)
-                            oi = _safe_int(tickers[0].openInterest)
+                            raw_oi = tickers[0].openInterest
+                            oi = _safe_int(raw_oi)
+                            log.debug("OI diag %s %s %s: raw=%r, int=%d",
+                                      exp, strike, right, raw_oi, oi)
                             total_oi += oi
                             if right == "P":
                                 put_oi += oi

@@ -7,7 +7,7 @@ on:
       - "src/**"
       - "Dockerfile"
       - "docker-compose.yml"
-      - "pyproject.toml.bak"
+      - "pyproject.toml"
       - "uv.lock"
 
 jobs:
